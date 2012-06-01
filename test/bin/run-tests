@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+set -a
+source etc/profile
+set +a
+
+runTests() {
+    local EXITCODE=0
+    local cur=0
+
+    local OUT=$(mktemp -t nodeunit.XXXXXXXXXX)
+
+    local cols text pars bar
+    for test in "$@"
+    do
+        if [[ -t 1 ]]
+        then
+            cols=$(($(tput cols) / 2))
+            let cur++
+            text=$(printf "%3i/%i %s" $cur $# "$test")
+            pars=$#
+            bar=$(printf "%$(( (cols - 2 - 5) * cur / pars ))s" ' ')
+            bar=${bar// /#}
+            printf "%s%$((cols - ${#text}))s[%-$(( cols - 2 - 5 ))s] %3i%%\\r" "$text" '' "$bar" $(( 100 * cur / $# ))
+        else
+            echo $test
+        fi
+
+        trap 'INT=1' INT
+
+        OUTPUT="$(nodeunit "$test" 2>&1)" || {
+            EXITCODE=$?
+            echo "$OUTPUT" >> $OUT
+            echo "$OUTPUT"
+        }
+        [[ -n $INT ]] && break
+    done
+
+    cols=$(tput cols)
+    printf "%${cols}s\\r"
+
+    if [[ $EXITCODE = 0 ]]
+    then
+        true
+    elif [[ -t 1 ]]
+    then
+        less -r $OUT
+    else
+        cat $OUT
+    fi
+
+    rm $OUT
+
+    return $EXITCODE
+}
+
+while getopts uim: OPT
+do
+  case $OPT in
+    u)
+      RUN_UNIT_TESTS=1
+      ;;
+    i)
+      RUN_INTEGRATION_TESTS=1
+      ;;
+    m)
+      MODULES+=(test/*/${OPTARG}.js)
+      ;;
+  esac
+done
+
+if [ -z $MODULES ]
+then
+  MODULES=(test/*/*.js)
+fi
+
+if [ -z $RUN_UNIT_TESTS ]
+then
+  # File names must not contain spaces!
+  MODULES=( ${MODULES[@]/test\/unit\/*.js/} )
+fi
+
+if [ -z $RUN_INTEGRATION_TESTS ]
+then
+  # File names must not contain spaces!
+  MODULES=( ${MODULES[@]/test\/integration\/*.js/} )
+fi
+
+# Remove files from test/lib - File names must not contain spaces!
+MODULES=( ${MODULES[@]/test\/lib\/*.js/} )
+
+runTests "${MODULES[@]}"
