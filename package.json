@@ -2,10 +2,10 @@
   "name": "monitor",
   "version": "2.0.0",
   "private": true,
-  "homepage": "git://github.com/ctavan/monitor.git",
+  "homepage": "git://github.com/ctavan/node-monitor.git",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ctavan/monitor.git"
+    "url": "git://github.com/ctavan/node-monitor.git"
   },
   "scripts": {
     "test": "make test"
