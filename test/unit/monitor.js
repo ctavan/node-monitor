@@ -9,6 +9,7 @@ exports['monitor.update()'] = function(test) {
     monitor.gauge('group', 'gauge.name.' + 'test', function() {
       return Date.now();
     });
+    monitor.updateGauge('group', 'gauge.update.' + 'test', 20);
 
     monitor.update('group', 'name.' + 'test', Math.random() * 10);
     monitor.update('group', 'name.' + 'test', Math.random() * 10);
